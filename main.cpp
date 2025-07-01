@@ -55,7 +55,7 @@ void printGrammar(vector<char> variables, vector<vector<string>> rules){
         for (int j = 0; j < rules[i].size(); ++j) {
             cout<<rules[i][j]<<" | ";
         }
-        cout<<"\b   j   \n";
+        cout<<"\b\b  "<<endl;
     }
 }
 bool isLandaVariable(vector<char> landaVariables, char variable){
@@ -65,12 +65,13 @@ bool isLandaVariable(vector<char> landaVariables, char variable){
     }
     return false;
 }
-bool hasLandaVariable(char variable, string rule){
+int hasLandaVariable(char variable, string rule){
+    int res = 0;
     for (int i = 0; i < rule.size(); ++i) {
         if(rule[i] == variable)
-            return true;
+            res++;
     }
-    return false;
+    return res;
 }
 bool isThisRuleNullable(vector<char> alphabet, vector<char> landaVariables, string rule){
     for (int i = 0; i < alphabet.size(); ++i) {
@@ -80,22 +81,47 @@ bool isThisRuleNullable(vector<char> alphabet, vector<char> landaVariables, stri
         }
     }
     for (int i = 0; i < landaVariables.size(); ++i) {
-        for (int j = 0; j < rule.size(); ++j) {
-            if(rule[j] == landaVariables[i])
+        int len = rule.size();
+        for (int j = 0; j < len; ++j) {
+            if(rule[j] == landaVariables[i]){
                 rule.erase(j, 1);
+                j--;
+            }
         }
     }
     if(rule != "")
         return false;
     return true;
 }
-string new_rule(char landaVariable, string rule){
-    string result="";
+
+string makeNewRule(char landaVariable, string rule){
+    string result ="";
     for (int i = 0; i < rule.length(); ++i) {
         if(rule[i] != landaVariable)
             result += rule[i];
     }
-    // if(result == "") result
+    return result;
+}
+vector<string> makeNewRules(char landaVariable, string rule, int outputSize){
+    vector<string> result;
+    string s;
+    int cnt = 0;
+    int indx[outputSize];
+    for (int i = 0; i < rule.length(); ++i) {
+        if(rule[i] == landaVariable){
+            indx[cnt] = i;
+            cnt++;
+        }
+    }
+    for (int i = 0; i < outputSize; ++i) {
+        s = "";
+        for (int j = 0; j < rule.size(); ++j) {
+            if(indx[i] != j)
+                s += rule[j];
+        }
+        result.push_back(s);
+    }
+    result.push_back(makeNewRule(landaVariable, rule));
     return result;
 }
 void deletingLanda(vector<char> alphabet, vector<char> variables, vector<vector<string>> rules){
@@ -136,20 +162,25 @@ void deletingLanda(vector<char> alphabet, vector<char> variables, vector<vector<
                     rules[i].erase(rules[i].begin()+j);
                     j--;
                     len--;
+                    continue;
                 }
-                if (hasLandaVariable(landaVariables[k], rules[i][j])) {
+                int LandaVariablesNum = hasLandaVariable(landaVariables[k], rules[i][j]);
+                if (LandaVariablesNum == 1) {
                     if (rules[i][j].length() > 1)
-                        rules[i].push_back(
-                            new_rule(landaVariables[k], rules[i][j]));
-                    else {
-                        rules[i].erase(rules[i].begin() + j);
-                        j--;
-                        len--;
+                        rules[i].push_back(makeNewRule(landaVariables[k], rules[i][j]));
+                }
+                else if (LandaVariablesNum > 1) {
+                    vector<string> new_rules = makeNewRules(landaVariables[k], rules[i][j], LandaVariablesNum);
+                    for (int k = 0; k < new_rules.size(); ++k) {
+                        if(new_rules[k].size()>0)
+                            rules[i].push_back(new_rules[k]);
                     }
                 }
             }
         }
     }
+    if(isLandaVariable(landaVariables, variables[0]))
+        rules[0].push_back("@");
     cout<<"Grammar after deleting landa rules:\n";
     printGrammar(variables, rules);
 }
@@ -184,3 +215,11 @@ int main()
 // S -> ASB
 // A -> aAS | a | @
 // B -> SbS | A | bb
+
+// 4
+// a b c
+// S A B C
+// S -> ACA
+// A -> aAa | B | C
+// B -> bB | b
+// C -> cC | @
