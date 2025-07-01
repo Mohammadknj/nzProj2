@@ -49,6 +49,29 @@ vector<string> grammarEncoder(string str) {
     rules.push_back(rule);
     return rules;
 }
+void printGrammar(vector<char> variables, vector<vector<string>> rules){
+    for (int i = 0; i < rules.size(); ++i) {
+        cout<<variables[i] << " -> ";
+        for (int j = 0; j < rules[i].size(); ++j) {
+            cout<<rules[i][j]<<" | ";
+        }
+        cout<<"\b   j   \n";
+    }
+}
+bool isLandaVariable(vector<char> landaVariables, char variable){
+    for (int i = 0; i < landaVariables.size(); ++i) {
+        if(landaVariables[i] == variable)
+            return true;
+    }
+    return false;
+}
+bool hasLandaVariable(char variable, string rule){
+    for (int i = 0; i < rule.size(); ++i) {
+        if(rule[i] == variable)
+            return true;
+    }
+    return false;
+}
 bool isThisRuleNullable(vector<char> alphabet, vector<char> landaVariables, string rule){
     for (int i = 0; i < alphabet.size(); ++i) {
         for (int j = 0; j < rule.size(); ++j) {
@@ -66,6 +89,15 @@ bool isThisRuleNullable(vector<char> alphabet, vector<char> landaVariables, stri
         return false;
     return true;
 }
+string new_rule(char landaVariable, string rule){
+    string result="";
+    for (int i = 0; i < rule.length(); ++i) {
+        if(rule[i] != landaVariable)
+            result += rule[i];
+    }
+    // if(result == "") result
+    return result;
+}
 void deletingLanda(vector<char> alphabet, vector<char> variables, vector<vector<string>> rules){
     bool landaFound = false;
     vector<char> landaVariables;
@@ -80,18 +112,46 @@ void deletingLanda(vector<char> alphabet, vector<char> variables, vector<vector<
     }
     if(!landaFound)
         return;
-    // A:
     for (int i = 0; i < rules.size(); ++i) {
-        for (int j = 0; j < rules[i].size(); ++j) {
-            if(isThisRuleNullable(alphabet, landaVariables, rules[i][j])){
-                landaVariables.push_back(variables[i]);
-                // goto A;
-                i = -1;
-                break;
+        // Checking to prevent check a landaVariable
+        if(!isLandaVariable(landaVariables, variables[i])){
+            for (int j = 0; j < rules[i].size(); ++j) {
+                if(isThisRuleNullable(alphabet, landaVariables, rules[i][j])){
+                    // If the rule is nullable, so this variable is landaVariable
+                    landaVariables.push_back(variables[i]);
+                    i = -1;
+                    break;
+                }
             }
         }
     }
-
+    // Deleting landa and adding new rules for each landaVariable
+    for (int k = 0; k < landaVariables.size(); ++k) {
+        // Checking whole grammar
+        // cout<<"Dj";
+        for (int i = 0; i < rules.size(); ++i) {
+            int len = rules[i].size();
+            for (int j = 0; j < len; ++j) {
+                if(rules[i][j]== "@"){
+                    rules[i].erase(rules[i].begin()+j);
+                    j--;
+                    len--;
+                }
+                if (hasLandaVariable(landaVariables[k], rules[i][j])) {
+                    if (rules[i][j].length() > 1)
+                        rules[i].push_back(
+                            new_rule(landaVariables[k], rules[i][j]));
+                    else {
+                        rules[i].erase(rules[i].begin() + j);
+                        j--;
+                        len--;
+                    }
+                }
+            }
+        }
+    }
+    cout<<"Grammar after deleting landa rules:\n";
+    printGrammar(variables, rules);
 }
 int main()
 {
