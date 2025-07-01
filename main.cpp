@@ -124,6 +124,18 @@ vector<string> makeNewRules(char landaVariable, string rule, int outputSize){
     result.push_back(makeNewRule(landaVariable, rule));
     return result;
 }
+void selfRuleDeleting(vector<char> variables, vector<vector<string>> &rules){
+    for (int j = 0; j < rules.size(); ++j) {
+        int len = rules[j].size();
+        for (int k = 0; k < len; ++k) {
+            if(rules[j][k].size() == 1 && variables[j] == rules[j][k][0]){
+                rules[j].erase(rules[j].begin()+k);
+                k--;
+                len--;
+            }
+        }
+    }
+}
 void deletingLanda(vector<char> alphabet, vector<char> variables, vector<vector<string>> rules){
     bool landaFound = false;
     vector<char> landaVariables;
@@ -181,6 +193,18 @@ void deletingLanda(vector<char> alphabet, vector<char> variables, vector<vector<
     }
     if(isLandaVariable(landaVariables, variables[0]))
         rules[0].push_back("@");
+    // Deleting repeated variables
+        // for (int j = 0; j < rules.size(); ++j) {
+        //     int len = rules[j].size();
+        //     for (int k = 0; k < len; ++k) {
+        //         if(rules[j][k].size() == 1 && variables[j] == rules[j][k][0]){
+        //             rules[j].erase(rules[j].begin()+k);
+        //             k--;
+        //             len--;
+        //         }
+        //     }
+        // }
+    selfRuleDeleting(variables, rules);
     cout<<"Grammar after deleting landa rules:\n";
     printGrammar(variables, rules);
 }
