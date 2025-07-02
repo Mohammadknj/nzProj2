@@ -292,7 +292,7 @@ vector<char> findIrrelativeVariables(vector<char> variables, vector<char> curren
     return result;
 }
 
-void deletingUselessProductions(vector<char> alphabet, vector<char> variables,
+void deletingUnavailableVars(vector<char> &variables,
                                 vector<vector<string>> &rules){
     vector<char> variablesCpy;
     vector<int> variablesCpyStatus;
@@ -305,9 +305,6 @@ void deletingUselessProductions(vector<char> alphabet, vector<char> variables,
     for (int i = 0; i < variablesCpy.size(); ++i) {
         for (int j = 0; j < rules[0].size(); ++j) {
             if(isInThisRule(rules[0][j],variablesCpy[i])){
-                //variablesCpy.erase(variablesCpy.begin()+i);
-                //i--;
-                // len--;
                 variablesCpyStatus[i] = 1;
                 break;
             }
@@ -330,13 +327,87 @@ void deletingUselessProductions(vector<char> alphabet, vector<char> variables,
             variables.erase(variables.begin()+ind);
 
         }
-        cout<<"Grammar after deleting irrelative rules:\n";
-        printGrammar(variables,rules);
     }
-    else{
-        cout<<"hjd";
-    }
+    // cout<<"Grammar after deleting irrelative rules:\n";
+    // printGrammar(variables,rules);
 }
+
+bool isInThisVector(vector<char> vec, char ch){
+    for (int i = 0; i < vec.size(); ++i) {
+        if(vec[i] == ch)
+            return true;
+    }
+    return false;
+}
+
+bool isFinishableRule(string rule, vector<char> alphabet, vector<char> finishableVariables){
+    for (int i = 0; i < rule.size(); ++i) {
+        if(!isInThisVector(alphabet, rule[i]) && !isInThisVector(finishableVariables, rule[i]))
+            return false;
+    }
+    return true;
+}
+// void deletingZeroRuleVar(vector<vector<string>> &rules){
+//     for (int i = 0; i < rules.size(); ++i) {
+
+//     }
+// }
+
+void deletingCountlessVariables(vector<char> alphabet, vector<char> &variables, vector<vector<string>> &rules){
+    vector<char> finishableVars;
+    // Finding finishableVars
+    for (int i = 1; i < rules.size(); ++i) {
+        if(!isInThisVector(finishableVars, variables[i]))
+        for (int j = 0; j < rules[i].size(); ++j) {
+            if(isFinishableRule(rules[i][j], alphabet, finishableVars)){
+                finishableVars.push_back(variables[i]);
+                i = 0;
+                break;
+            }
+        }
+    }
+    // Deleting unfinishable variables and it's rule
+    finishableVars.insert(finishableVars.begin(), variables[0]);
+    vector<char> unfinishableVars;
+    for (int i = 0; i < variables.size(); ++i) {
+        if(!isInThisVector(finishableVars, variables[i])){
+            unfinishableVars.push_back(variables[i]);
+            rules.erase(rules.begin()+i);
+            variables.erase(variables.begin()+i);
+        }
+    }
+    // Deleting rules that consist unfinishable variables
+    for (int i = 0; i < unfinishableVars.size(); ++i) {
+        for (int j = 0; j < rules.size(); ++j) {
+            int len = rules[j].size();
+            for (int k = 0; k < len; ++k) {
+                if(isInThisRule(rules[j][k], unfinishableVars[i])){
+                    rules[j].erase(rules[j].begin()+k);
+                    k--;
+                    len--;
+                    // break;
+                }
+            }
+        }
+    }
+    selfRuleDeleting(variables, rules);
+    deleteRepeatedRules(variables, rules);
+    // for checking countless loop on S
+    // finishableVars.erase(finishableVars.begin());
+    // int len = rules[0].size();
+    // for (int i = 0; i < len; ++i) {
+    //     if(isInThisRule(rules[0][i], variables[0])){
+    //         for (int j = 0; j < len; ++j) {
+    //             if(i != j && !isFinishableRule(rules[0][j], alphabet, finishableVars)){
+    //                 rules[0].erase(rules[0].begin()+j);
+    //                 j--;
+    //                 len--;
+    //             }
+    //         }
+    //     }
+    // }
+}
+
 int main() {
     string s;
     cout << "HELLO! Welcome to our CNF convertor\n";
@@ -362,7 +433,12 @@ int main() {
     deletingChain(variables, rules);
     cout << "Grammar after deleting chain rules:\n";
     printGrammar(variables, rules);
-    deletingUselessProductions(alphabet, variables, rules);
+    deletingUnavailableVars(variables, rules);
+    cout << "Grammar after deleting unavailable variables:\n";
+    printGrammar(variables, rules);
+    deletingCountlessVariables(alphabet, variables, rules);
+    cout << "Grammar after deleting countless variables:\n";
+    printGrammar(variables, rules);
     return 0;
 }
 // 3
@@ -395,3 +471,25 @@ int main() {
 // B -> b
 // E -> aAb | bSA
 // F -> bB | b
+
+// 4
+// a b
+// S A B C
+// S -> aS | A | C
+// A -> a
+// B -> aa
+// C ->aCb
+
+// 3
+// a b
+// S B A
+// S -> Sa | B
+// B -> A | bb
+// A -> aA
+
+// 3
+// a b
+// S B A
+// S -> ASa | B
+// B -> A | bb
+// A -> aA
