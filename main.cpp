@@ -23,17 +23,6 @@ vector<string> grammarEncoder(string str) {
     vector<string> rules;
     string rule;
     for (int j = i + 1; j < str.length(); ++j) {
-        // if (str[j] != ' ') {
-        //     if (str[j]!='|'){
-        //         while ((str[j] != ' ' && str[j]!='|') && j < str.length()) {
-        //             rule += str[j];
-        //             j++;
-        //         }
-        //         rules.push_back(rule);
-        //         rule = "";
-        //         j--;
-        //     }
-        // }
         if (str[j] == ' ') {
             continue;
         }
@@ -42,10 +31,6 @@ vector<string> grammarEncoder(string str) {
             rule = "";
             continue;
         }
-        // while ((str[j] != ' ' && str[j]!='|') && j < str.length()) {
-        //     rule += str[j];
-        //     j++;
-        // }
         rule += str[j];
     }
     rules.push_back(rule);
@@ -70,7 +55,7 @@ bool isBetweenTheseVariables(vector<char> Variables, char variable) {
     return false;
 }
 
-int hasLandaVariable(char variable, string rule) {
+int landaVariablesNum(char variable, string rule) {
     int res = 0;
     for (int i = 0; i < rule.size(); ++i) {
         if (rule[i] == variable)
@@ -110,18 +95,18 @@ string makeNewRule(char landaVariable, string rule) {
     return result;
 }
 
-vector<string> makeNewRules(char landaVariable, string rule, int outputSize) {
+vector<string> makeNewRules(char landaVariable, string rule, int &landaVarNum) {
     vector<string> result;
     string s;
     int cnt = 0;
-    int indx[outputSize];
+    int indx[landaVarNum];
     for (int i = 0; i < rule.length(); ++i) {
         if (rule[i] == landaVariable) {
             indx[cnt] = i;
             cnt++;
         }
     }
-    for (int i = 0; i < outputSize; ++i) {
+    for (int i = 0; i < landaVarNum; ++i) {
         s = "";
         for (int j = 0; j < rule.size(); ++j) {
             if (indx[i] != j)
@@ -161,6 +146,7 @@ void deleteRepeatedRules(vector<char> variables, vector<vector<string>> &rules){
         }
     }
 }
+
 void deletingLanda(vector<char> alphabet, vector<char> variables,
                    vector<vector<string>> &rules) {
     bool landaFound = false;
@@ -192,7 +178,6 @@ void deletingLanda(vector<char> alphabet, vector<char> variables,
     // Deleting landa and adding new rules for each landaVariable
     for (int k = 0; k < landaVariables.size(); ++k) {
         // Checking whole grammar
-        // cout<<"Dj";
         for (int i = 0; i < rules.size(); ++i) {
             int len = rules[i].size();
             for (int j = 0; j < len; ++j) {
@@ -203,7 +188,7 @@ void deletingLanda(vector<char> alphabet, vector<char> variables,
                     continue;
                 }
                 int LandaVariablesNum =
-                    hasLandaVariable(landaVariables[k], rules[i][j]);
+                    landaVariablesNum(landaVariables[k], rules[i][j]);
                 if (LandaVariablesNum == 1) {
                     if (rules[i][j].length() > 1)
                         rules[i].push_back(makeNewRule(landaVariables[k], rules[i][j]));
@@ -218,6 +203,7 @@ void deletingLanda(vector<char> alphabet, vector<char> variables,
             }
         }
     }
+    // If S is landaVariable, put landa in its rules
     if (isBetweenTheseVariables(landaVariables, variables[0]))
         rules[0].push_back("@");
     selfRuleDeleting(variables, rules);
@@ -231,8 +217,10 @@ int findVariableIndex(vector<char> variables, char variable){
         }
     }
 }
+
 void deletingChain(vector<char> variables,
                    vector<vector<string>> &rules) {
+    // Finding chains and pushing to stack for popping sequenced
     stack<char> chainSequence;
     for (int i = 0; i < rules.size(); ++i) {
         for (int j = 0; j < rules[i].size(); ++j) {
@@ -244,13 +232,14 @@ void deletingChain(vector<char> variables,
         }
     }
     while(!chainSequence.empty()){
-        int index=0;
-        for (int i = 0; i < variables.size(); ++i) {
-            if(chainSequence.top() == variables[i]){
-                index = i;
-                break;
-            }
-        }
+        // int index=0;
+        // for (int i = 0; i < variables.size(); ++i) {
+        //     if(chainSequence.top() == variables[i]){
+        //         index = i;
+        //         break;
+        //     }
+        // }
+        int index = findVariableIndex(variables, chainSequence.top());
         int len = rules[index].size();
         for (int i = 0; i < len; ++i) {
             if (rules[index][i].size() == 1 &&
@@ -272,11 +261,82 @@ void deletingChain(vector<char> variables,
     }
 }
 
-void deletingUselessProductions(vector<char> alphabet, vector<char> variables,
-                                vector<vector<string>> &rules){
-
+bool isInThisRule(string rule, char variable){
+    for (int i = 0; i < rule.size(); ++i) {
+        if(rule[i] == variable)
+            return true;
+    }
+    return false;
 }
 
+vector<char> findIrrelativeVariables(vector<char> variables, vector<char> currentRelatives, vector<char> currentIrrelatives, vector<vector<string>> rules){
+    vector<char> result = currentIrrelatives;
+    int len = result.size();
+    for (int i = 0; i < len; ++i) {
+        for (int j = 0; j < currentRelatives.size(); ++j) {
+            int index = findVariableIndex(variables, currentRelatives[j]);
+            bool found = false;
+            for (int k = 0; k < rules[index].size(); ++k) {
+                if(isInThisRule(rules[index][k],result[i])){
+                    result.erase(result.begin()+i);
+                    len--;
+                    i--;
+                    found = true;
+                    break;
+                }
+            }
+            if(found) break;
+        }
+    }
+
+    return result;
+}
+
+void deletingUselessProductions(vector<char> alphabet, vector<char> variables,
+                                vector<vector<string>> &rules){
+    vector<char> variablesCpy;
+    vector<int> variablesCpyStatus;
+    for (int i = 1; i < variables.size(); ++i) {
+        variablesCpy.push_back(variables[i]);
+        // 0 means this variable has not a direct realation with S
+        // 1 means this variable has a direct realation with S
+        variablesCpyStatus.push_back(0);
+    }
+    for (int i = 0; i < variablesCpy.size(); ++i) {
+        for (int j = 0; j < rules[0].size(); ++j) {
+            if(isInThisRule(rules[0][j],variablesCpy[i])){
+                //variablesCpy.erase(variablesCpy.begin()+i);
+                //i--;
+                // len--;
+                variablesCpyStatus[i] = 1;
+                break;
+            }
+        }
+    }
+    vector<char> relatives;
+    vector<char> irrelatives;
+    for (int i = 0; i < variablesCpy.size(); ++i) {
+        if(variablesCpyStatus[i] == 1)
+            relatives.push_back(variablesCpy[i]);
+        else
+            irrelatives.push_back(variablesCpy[i]);
+
+    }
+    if(irrelatives.size()>0){
+        irrelatives = findIrrelativeVariables(variables, relatives, irrelatives, rules);
+        for (int i = 0; i < irrelatives.size(); ++i) {
+            int ind = findVariableIndex(variables,irrelatives[i]);
+            rules.erase(rules.begin()+ind);
+            variables.erase(variables.begin()+ind);
+
+        }
+        cout<<"Grammar after deleting irrelative rules:\n";
+        printGrammar(variables,rules);
+    }
+    else{
+        cout<<"hjd";
+    }
+}
 int main() {
     string s;
     cout << "HELLO! Welcome to our CNF convertor\n";
@@ -292,10 +352,8 @@ int main() {
     vector<char> variables = encoding(s);
     cout << "Enter grammar's rules. You should separate them with an enter:\n";
     vector<vector<string>> rules;
-    // string rules[3]
     for (int i = 0; i < variables.size(); ++i) {
         getline(cin, s);
-        // vector<string> rule = ;
         rules.push_back(grammarEncoder(s));
     }
     deletingLanda(alphabet, variables, rules);
@@ -328,3 +386,12 @@ int main() {
 // S -> Aa | B
 // B -> A | bb
 // A -> a | bc | B
+
+// 5
+// a b
+// S A B E F
+// S -> BS | B
+// A -> aA | aF
+// B -> b
+// E -> aAb | bSA
+// F -> bB | b
