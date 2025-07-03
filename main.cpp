@@ -71,12 +71,14 @@ int landaVariablesNum(char variable, string rule) {
 
 bool isThisRuleNullable(vector<char> alphabet, vector<char> landaVariables,
                         string rule) {
+    // If it has an alphabet, no
     for (int i = 0; i < int(alphabet.size()); ++i) {
         for (int j = 0; j < int(rule.size()); ++j) {
             if (rule[j] == alphabet[i])
                 return false;
         }
     }
+    // deleting landaVariables to see if remains any other variables to reject
     for (int i = 0; i < int(landaVariables.size()); ++i) {
         int len = rule.size();
         for (int j = 0; j < len; ++j) {
@@ -504,37 +506,107 @@ char newVar(vector<char> variables){
     return charAscii;
 }
 
-void chomsky(vector<char> alphabet, vector<char> variables,
+bool alphabetVarRequirement(char alphabet, vector<vector<string>> rules){
+    for (int i = 0; i < int(rules.size()); ++i) {
+        for (int j = 0; j < int(rules[i].size()); ++j) {
+            if(rules[i][j].size()>1 && isInThisRule(rules[i][j], alphabet))
+                return true;
+        }
+    }
+    return false;
+}
+
+void chomsky(vector<char> alphabet, vector<char> &variables,
              vector<vector<string>> &rules){
     if(rules.size() == 0)
         return;
-    int rulesLen = rules.size();
     // making alphabet vars like Ta -> a
     vector<char> newVars;
     vector<vector<string>> newRules;
-    for (int i = 0; i < int(alphabet.size()); ++i) {
+    int len = alphabet.size();
+    for (int i = 0; i < len; ++i) {
+        // just use new variables that are used, not extra alphabet
+        if(!alphabetVarRequirement(alphabet[i], rules)){
+            alphabet.erase(alphabet.begin()+i);
+            i--;
+            len--;
+            continue;
+        }
         newVars.push_back(newVar(variables));
         variables.push_back(newVars[newVars.size()-1]);
         vector<string> r;
         string s(1, alphabet[i]);
         r.push_back(s);
         newRules.push_back(r);
-        rules.push_back(newRules[i]);
+        rules.push_back(newRules[newVars.size()-1]);// rules.push_back(r);
     }
-    // for (int i = 0; i < rulesLen; ++i) {
     for (int i = 0; i < int(rules.size()); ++i) {
         for (int j = 0; j < int(rules[i].size()); ++j) {
-            if(rules[i][j].size() > 1){
-                if(rules[i][j].size() == 2){
-                    if(!isInTheseVariables(variables,rules[i][j][0]) && !isInTheseVariables(variables,rules[i][j][1])){
-                        cout<<"H";
+            if (rules[i][j].size() > 1) {
+                if (rules[i][j].size() == 2) {
+                    if (isInTheseVariables(variables, rules[i][j][0]) && isInTheseVariables(variables, rules[i][j][1])) {
+                        continue;
                     }
-                }else{
-                    int mid = rules[i][j].size()/2;
+                    string s="";
+                    if(isInTheseVariables(variables, rules[i][j][0]) && isInTheseVariables(alphabet, rules[i][j][1])){
+                        s += rules[i][j][0];
+                        int index = findVariableIndex(alphabet, rules[i][j][1]);
+                        s += newVars[index];
+                        rules[i].erase(rules[i].begin()+j);
+                        rules[i].insert(rules[i].begin()+j,s);
+                    }else if(isInTheseVariables(alphabet, rules[i][j][0]) && isInTheseVariables(variables, rules[i][j][1])){
+                        int index = findVariableIndex(alphabet, rules[i][j][0]);
+                        s += newVars[index];
+                        s += rules[i][j][1];
+                        rules[i].erase(rules[i].begin()+j);
+                        rules[i].insert(rules[i].begin()+j,s);
+                    }else if(isInTheseVariables(alphabet, rules[i][j][0]) && isInTheseVariables(alphabet, rules[i][j][1])){
+                        int index = findVariableIndex(alphabet, rules[i][j][0]);
+                        s += newVars[index];
+                        index = findVariableIndex(alphabet, rules[i][j][1]);
+                        s += newVars[index];
+                        rules[i].erase(rules[i].begin()+j);
+                        rules[i].insert(rules[i].begin()+j,s);
+                    }
+                } else {
+                    int mid = rules[i][j].size() / 2;
+                    string s = "";
+                    for (int k = 0; k < mid; ++k) {
+                        s += rules[i][j][k];
+                    }
+                    char ch1, ch2;
+                    vector<string> r;
+                    if(s.length()>1){
+                        ch1 = newVar(variables);
+                        newVars.push_back(ch1);
+                        variables.push_back(newVars[newVars.size()-1]);
+                        r.push_back(s);
+                        newRules.push_back(r);
+                        rules.push_back(newRules[newVars.size()-1]);
+                    }
+                    else
+                        ch1 = s[0];
+                    s = "";
+                    for (int k = mid; k < int(rules[i][j].size()); ++k) {
+                        s += rules[i][j][k];
+                    }
+                    ch2 = newVar(variables);
+                    newVars.push_back(ch2);
+                    variables.push_back(newVars[newVars.size()-1]);
+                    r.clear();
+                    r.push_back(s);
+                    newRules.push_back(r);
+                    rules.push_back(newRules[newVars.size()-1]);
+                    rules[i].erase(rules[i].begin()+j);
+                    s="";
+                    s=string(1,ch1)+string(1,ch2);
+                    rules[i].insert(rules[i].begin()+j,s);
+                    j--;
                 }
             }
         }
     }
+    printGrammar(variables, rules, "2len");
 }
 
 int main() {
@@ -614,9 +686,12 @@ int main() {
 // B -> A | bb
 // A -> aA
 
+// ..
+
+
 // 3
-// a b
-// S B A
-// S -> ASa | B
-// B -> A | bb
-// A -> aA
+// a b c
+// S A B
+// S -> ABa
+// A -> aab
+// B -> Ac
