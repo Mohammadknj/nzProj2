@@ -3,10 +3,11 @@
 #include <vector>
 using namespace std;
 
+// making alphabets and variables
 vector<char> encoding(string str) {
     vector<char> result;
     int i = 0;
-    while (i < str.length()) {
+    while (i < int(str.length())) {
         if (str[i] != ' ') {
             result.push_back(str[i]);
         }
@@ -15,6 +16,7 @@ vector<char> encoding(string str) {
     return result;
 }
 
+// making grammar rules
 vector<string> grammarEncoder(string str) {
     int i = 1;
     while (str[i] != '>') {
@@ -22,7 +24,7 @@ vector<string> grammarEncoder(string str) {
     }
     vector<string> rules;
     string rule;
-    for (int j = i + 1; j < str.length(); ++j) {
+    for (int j = i + 1; j < int(str.length()); ++j) {
         if (str[j] == ' ') {
             continue;
         }
@@ -37,27 +39,30 @@ vector<string> grammarEncoder(string str) {
     return rules;
 }
 
-void printGrammar(vector<char> variables, vector<vector<string>> rules) {
-    for (int i = 0; i < rules.size(); ++i) {
+void printGrammar(vector<char> variables, vector<vector<string>> rules, string str) {
+    if(rules.size()<1) return;
+    cout << "Grammar after deleting "<<str<<":"<<endl;
+    for (int i = 0; i < int(rules.size()); ++i) {
         cout << variables[i] << " -> ";
-        for (int j = 0; j < rules[i].size(); ++j) {
+        for (int j = 0; j < int(rules[i].size()); ++j) {
             cout << rules[i][j] << " | ";
         }
         cout << "\b\b  " << endl;
     }
 }
 
-bool isBetweenTheseVariables(vector<char> Variables, char variable) {
-    for (int i = 0; i < Variables.size(); ++i) {
+bool isInTheseVariables(vector<char> Variables, char variable) {
+    for (int i = 0; i < int(Variables.size()); ++i) {
         if (Variables[i] == variable)
             return true;
     }
     return false;
 }
 
+// returning number of landaVariables used in one rule
 int landaVariablesNum(char variable, string rule) {
     int res = 0;
-    for (int i = 0; i < rule.size(); ++i) {
+    for (int i = 0; i < int(rule.size()); ++i) {
         if (rule[i] == variable)
             res++;
     }
@@ -66,13 +71,13 @@ int landaVariablesNum(char variable, string rule) {
 
 bool isThisRuleNullable(vector<char> alphabet, vector<char> landaVariables,
                         string rule) {
-    for (int i = 0; i < alphabet.size(); ++i) {
-        for (int j = 0; j < rule.size(); ++j) {
+    for (int i = 0; i < int(alphabet.size()); ++i) {
+        for (int j = 0; j < int(rule.size()); ++j) {
             if (rule[j] == alphabet[i])
                 return false;
         }
     }
-    for (int i = 0; i < landaVariables.size(); ++i) {
+    for (int i = 0; i < int(landaVariables.size()); ++i) {
         int len = rule.size();
         for (int j = 0; j < len; ++j) {
             if (rule[j] == landaVariables[i]) {
@@ -86,29 +91,34 @@ bool isThisRuleNullable(vector<char> alphabet, vector<char> landaVariables,
     return true;
 }
 
+// making a new rule without the current landaVariable
 string makeNewRule(char landaVariable, string rule) {
     string result = "";
-    for (int i = 0; i < rule.length(); ++i) {
+    for (int i = 0; i < int(rule.length()); ++i) {
         if (rule[i] != landaVariable)
             result += rule[i];
     }
     return result;
 }
 
+// making a new rule without the current landaVariable
+// used for rules with 2 same landaVariable
 vector<string> makeNewRules(char landaVariable, string rule, int &landaVarNum) {
     vector<string> result;
     string s;
     int cnt = 0;
+    // finding landaVariables index
     int indx[landaVarNum];
-    for (int i = 0; i < rule.length(); ++i) {
+    for (int i = 0; i < int(rule.length()); ++i) {
         if (rule[i] == landaVariable) {
             indx[cnt] = i;
             cnt++;
         }
     }
+    // making new rules without this currentIndex landaVariable
     for (int i = 0; i < landaVarNum; ++i) {
         s = "";
-        for (int j = 0; j < rule.size(); ++j) {
+        for (int j = 0; j < int(rule.size()); ++j) {
             if (indx[i] != j)
                 s += rule[j];
         }
@@ -118,8 +128,9 @@ vector<string> makeNewRules(char landaVariable, string rule, int &landaVarNum) {
     return result;
 }
 
+// deleting rules that are looping on itself like A -> A
 void selfRuleDeleting(vector<char> variables, vector<vector<string>> &rules) {
-    for (int j = 0; j < rules.size(); ++j) {
+    for (int j = 0; j < int(rules.size()); ++j) {
         int len = rules[j].size();
         for (int k = 0; k < len; ++k) {
             if (rules[j][k].size() == 1 && variables[j] == rules[j][k][0]) {
@@ -131,10 +142,11 @@ void selfRuleDeleting(vector<char> variables, vector<vector<string>> &rules) {
     }
 }
 
-void deleteRepeatedRules(vector<char> variables, vector<vector<string>> &rules){
+// deleting same rules that are for one variable like A -> a | a  => A -> a
+void deleteRepeatedRules(vector<vector<string>> &rules){
     int len;
-    for (int i = 0; i < rules.size(); ++i) {
-        for (int j = 0; j < rules[i].size(); ++j) {
+    for (int i = 0; i < int(rules.size()); ++i) {
+        for (int j = 0; j < int(rules[i].size()); ++j) {
             len = rules[i].size();
             for (int k = 0; k < len; ++k) {
                 if(k != j && rules[i][k] == rules[i][j]){
@@ -149,10 +161,11 @@ void deleteRepeatedRules(vector<char> variables, vector<vector<string>> &rules){
 
 void deletingLanda(vector<char> alphabet, vector<char> variables,
                    vector<vector<string>> &rules) {
+    // finding landaVariables which has a direct landa rule
     bool landaFound = false;
     vector<char> landaVariables;
-    for (int i = 0; i < rules.size(); ++i) {
-        for (int j = 0; j < rules[i].size(); ++j) {
+    for (int i = 0; i < int(rules.size()); ++i) {
+        for (int j = 0; j < int(rules[i].size()); ++j) {
             if (rules[i][j] == "@") {
                 landaVariables.push_back(variables[i]);
                 landaFound = true;
@@ -162,13 +175,16 @@ void deletingLanda(vector<char> alphabet, vector<char> variables,
     }
     if (!landaFound)
         return;
-    for (int i = 0; i < rules.size(); ++i) {
+
+    // finding landaVariables which has a indirect landa rule
+    for (int i = 0; i < int(rules.size()); ++i) {
         // Checking to prevent check a landaVariable
-        if (!isBetweenTheseVariables(landaVariables, variables[i])) {
-            for (int j = 0; j < rules[i].size(); ++j) {
+        if (!isInTheseVariables(landaVariables, variables[i])) {
+            for (int j = 0; j < int(rules[i].size()); ++j) {
                 if (isThisRuleNullable(alphabet, landaVariables, rules[i][j])) {
                     // If the rule is nullable, so this variable is landaVariable
                     landaVariables.push_back(variables[i]);
+                    // Start searching from S
                     i = -1;
                     break;
                 }
@@ -176,9 +192,9 @@ void deletingLanda(vector<char> alphabet, vector<char> variables,
         }
     }
     // Deleting landa and adding new rules for each landaVariable
-    for (int k = 0; k < landaVariables.size(); ++k) {
+    for (int k = 0; k < int(landaVariables.size()); ++k) {
         // Checking whole grammar
-        for (int i = 0; i < rules.size(); ++i) {
+        for (int i = 0; i < int(rules.size()); ++i) {
             int len = rules[i].size();
             for (int j = 0; j < len; ++j) {
                 if (rules[i][j] == "@") {
@@ -195,7 +211,7 @@ void deletingLanda(vector<char> alphabet, vector<char> variables,
                 } else if (LandaVariablesNum > 1) {
                     vector<string> new_rules =
                         makeNewRules(landaVariables[k], rules[i][j], LandaVariablesNum);
-                    for (int k = 0; k < new_rules.size(); ++k) {
+                    for (int k = 0; k < int(new_rules.size()); ++k) {
                         if (new_rules[k].size() > 0)
                             rules[i].push_back(new_rules[k]);
                     }
@@ -204,14 +220,14 @@ void deletingLanda(vector<char> alphabet, vector<char> variables,
         }
     }
     // If S is landaVariable, put landa in its rules
-    if (isBetweenTheseVariables(landaVariables, variables[0]))
+    if (isInTheseVariables(landaVariables, variables[0]))
         rules[0].push_back("@");
     selfRuleDeleting(variables, rules);
-    deleteRepeatedRules(variables,rules);
+    deleteRepeatedRules(rules);
 }
 
 int findVariableIndex(vector<char> variables, char variable){
-    for (int i = 0; i < variables.size(); ++i) {
+    for (int i = 0; i < int(variables.size()); ++i) {
         if(variable == variables[i]){
             return i;
         }
@@ -222,47 +238,40 @@ void deletingChain(vector<char> variables,
                    vector<vector<string>> &rules) {
     // Finding chains and pushing to stack for popping sequenced
     stack<char> chainSequence;
-    for (int i = 0; i < rules.size(); ++i) {
-        for (int j = 0; j < rules[i].size(); ++j) {
+    for (int i = 0; i < int(rules.size()); ++i) {
+        for (int j = 0; j < int(rules[i].size()); ++j) {
             if (rules[i][j].size() == 1 &&
-                isBetweenTheseVariables(variables, rules[i][j][0]) &&
+                isInTheseVariables(variables, rules[i][j][0]) &&
                 rules[i][j][0] != variables[i]) {
                 chainSequence.push(variables[i]);
             }
         }
     }
+    // deleting chains
     while(!chainSequence.empty()){
-        // int index=0;
-        // for (int i = 0; i < variables.size(); ++i) {
-        //     if(chainSequence.top() == variables[i]){
-        //         index = i;
-        //         break;
-        //     }
-        // }
         int index = findVariableIndex(variables, chainSequence.top());
         int len = rules[index].size();
         for (int i = 0; i < len; ++i) {
             if (rules[index][i].size() == 1 &&
-                isBetweenTheseVariables(variables, rules[index][i][0]) &&
+                isInTheseVariables(variables, rules[index][i][0]) &&
                 rules[index][i][0] != variables[index]) {
-                // chainSequence.push(variables[i]);
                 int ind = findVariableIndex(variables, rules[index][i][0]);
                 rules[index].erase(rules[index].begin()+i);
                 i--;
                 len--;
-                for (int j = 0; j < rules[ind].size(); ++j) {
+                for (int j = 0; j < int(rules[ind].size()); ++j) {
                     rules[index].push_back(rules[ind][j]);
                 }
             }
         }
         selfRuleDeleting(variables, rules);
-        deleteRepeatedRules(variables, rules);
+        deleteRepeatedRules(rules);
         chainSequence.pop();
     }
 }
 
 bool isInThisRule(string rule, char variable){
-    for (int i = 0; i < rule.size(); ++i) {
+    for (int i = 0; i < int(rule.size()); ++i) {
         if(rule[i] == variable)
             return true;
     }
@@ -273,10 +282,10 @@ vector<char> findIrrelativeVariables(vector<char> variables, vector<char> curren
     vector<char> result = currentIrrelatives;
     int len = result.size();
     for (int i = 0; i < len; ++i) {
-        for (int j = 0; j < currentRelatives.size(); ++j) {
+        for (int j = 0; j < int(currentRelatives.size()); ++j) {
             int index = findVariableIndex(variables, currentRelatives[j]);
             bool found = false;
-            for (int k = 0; k < rules[index].size(); ++k) {
+            for (int k = 0; k < int(rules[index].size()); ++k) {
                 if(isInThisRule(rules[index][k],result[i])){
                     result.erase(result.begin()+i);
                     len--;
@@ -296,14 +305,14 @@ void deletingUnavailableVars(vector<char> &variables,
                                 vector<vector<string>> &rules){
     vector<char> variablesCpy;
     vector<int> variablesCpyStatus;
-    for (int i = 1; i < variables.size(); ++i) {
+    for (int i = 1; i < int(variables.size()); ++i) {
         variablesCpy.push_back(variables[i]);
         // 0 means this variable has not a direct realation with S
         // 1 means this variable has a direct realation with S
         variablesCpyStatus.push_back(0);
     }
-    for (int i = 0; i < variablesCpy.size(); ++i) {
-        for (int j = 0; j < rules[0].size(); ++j) {
+    for (int i = 0; i < int(variablesCpy.size()); ++i) {
+        for (int j = 0; j < int(rules[0].size()); ++j) {
             if(isInThisRule(rules[0][j],variablesCpy[i])){
                 variablesCpyStatus[i] = 1;
                 break;
@@ -312,7 +321,7 @@ void deletingUnavailableVars(vector<char> &variables,
     }
     vector<char> relatives;
     vector<char> irrelatives;
-    for (int i = 0; i < variablesCpy.size(); ++i) {
+    for (int i = 0; i < int(variablesCpy.size()); ++i) {
         if(variablesCpyStatus[i] == 1)
             relatives.push_back(variablesCpy[i]);
         else
@@ -321,7 +330,7 @@ void deletingUnavailableVars(vector<char> &variables,
     }
     if(irrelatives.size()>0){
         irrelatives = findIrrelativeVariables(variables, relatives, irrelatives, rules);
-        for (int i = 0; i < irrelatives.size(); ++i) {
+        for (int i = 0; i < int(irrelatives.size()); ++i) {
             int ind = findVariableIndex(variables,irrelatives[i]);
             rules.erase(rules.begin()+ind);
             variables.erase(variables.begin()+ind);
@@ -333,7 +342,7 @@ void deletingUnavailableVars(vector<char> &variables,
 }
 
 bool isInThisVector(vector<char> vec, char ch){
-    for (int i = 0; i < vec.size(); ++i) {
+    for (int i = 0; i < int(vec.size()); ++i) {
         if(vec[i] == ch)
             return true;
     }
@@ -341,7 +350,7 @@ bool isInThisVector(vector<char> vec, char ch){
 }
 
 bool isFinishableRule(string rule, vector<char> alphabet, vector<char> finishableVariables){
-    for (int i = 0; i < rule.size(); ++i) {
+    for (int i = 0; i < int(rule.size()); ++i) {
         if(!isInThisVector(alphabet, rule[i]) && !isInThisVector(finishableVariables, rule[i]))
             return false;
     }
@@ -356,9 +365,9 @@ bool isFinishableRule(string rule, vector<char> alphabet, vector<char> finishabl
 void deletingCountlessVariables(vector<char> alphabet, vector<char> &variables, vector<vector<string>> &rules){
     vector<char> finishableVars;
     // Finding finishableVars
-    for (int i = 1; i < rules.size(); ++i) {
+    for (int i = 1; i < int(rules.size()); ++i) {
         if(!isInThisVector(finishableVars, variables[i]))
-        for (int j = 0; j < rules[i].size(); ++j) {
+        for (int j = 0; j < int(rules[i].size()); ++j) {
             if(isFinishableRule(rules[i][j], alphabet, finishableVars)){
                 finishableVars.push_back(variables[i]);
                 i = 0;
@@ -369,7 +378,7 @@ void deletingCountlessVariables(vector<char> alphabet, vector<char> &variables, 
     // Deleting unfinishable variables and it's rule
     finishableVars.insert(finishableVars.begin(), variables[0]);
     vector<char> unfinishableVars;
-    for (int i = 0; i < variables.size(); ++i) {
+    for (int i = 0; i < int(variables.size()); ++i) {
         if(!isInThisVector(finishableVars, variables[i])){
             unfinishableVars.push_back(variables[i]);
             rules.erase(rules.begin()+i);
@@ -377,8 +386,8 @@ void deletingCountlessVariables(vector<char> alphabet, vector<char> &variables, 
         }
     }
     // Deleting rules that consist unfinishable variables
-    for (int i = 0; i < unfinishableVars.size(); ++i) {
-        for (int j = 0; j < rules.size(); ++j) {
+    for (int i = 0; i < int(unfinishableVars.size()); ++i) {
+        for (int j = 0; j < int(rules.size()); ++j) {
             int len = rules[j].size();
             for (int k = 0; k < len; ++k) {
                 if(isInThisRule(rules[j][k], unfinishableVars[i])){
@@ -391,7 +400,79 @@ void deletingCountlessVariables(vector<char> alphabet, vector<char> &variables, 
         }
     }
     selfRuleDeleting(variables, rules);
-    deleteRepeatedRules(variables, rules);
+    deleteRepeatedRules(rules);
+    // for checking countless loop on S
+    // finishableVars.erase(finishableVars.begin());
+    // int len = rules[0].size();
+    // for (int i = 0; i < len; ++i) {
+    //     if(isInThisRule(rules[0][i], variables[0])){
+    //         for (int j = 0; j < len; ++j) {
+    //             if(i != j && !isFinishableRule(rules[0][j], alphabet, finishableVars)){
+    //                 rules[0].erase(rules[0].begin()+j);
+    //                 j--;
+    //                 len--;
+    //             }
+    //         }
+    //     }
+    // }
+}
+
+void deleteAllVars(vector<char> &variables, vector<vector<string>> &rules){
+    // for (int i = 0; i < int(rules.size()); ++i) {
+    //     for (int j = 0; j < int(rules[i].size()); ++j) {
+
+    //     }
+    // }
+    rules.clear();
+    variables.clear();
+}
+
+void deletingCountlessVariables1(vector<char> alphabet, vector<char> &variables, vector<vector<string>> &rules){
+    vector<char> finishableVars;
+    // Finding finishableVars
+    for (int i = 0; i < int(rules.size()); ++i) {
+        if(!isInThisVector(finishableVars, variables[i]))
+            for (int j = 0; j < int(rules[i].size()); ++j) {
+                if(isFinishableRule(rules[i][j], alphabet, finishableVars)){
+                    finishableVars.push_back(variables[i]);
+                    i = -1;
+                    break;
+                }
+            }
+    }
+    // Deleting unfinishable variables and it's rule
+    // finishableVars.insert(finishableVars.begin(), variables[0]);
+    vector<char> unfinishableVars;
+    for (int i = 0; i < int(variables.size()); ++i) {
+        if(!isInThisVector(finishableVars, variables[i])){
+            // If S variable is countless, So it will just make landa and we have
+            if(i == 0){
+                cout<<"This start variable ("<<variables[0]<<") just makes landa strings,"<<endl;
+                deleteAllVars(variables, rules);
+                return;
+            }
+            unfinishableVars.push_back(variables[i]);
+            rules.erase(rules.begin()+i);
+            variables.erase(variables.begin()+i);
+        }
+    }
+
+    // Deleting rules that consist unfinishable variables
+    for (int i = 0; i < int(unfinishableVars.size()); ++i) {
+        for (int j = 0; j < int(rules.size()); ++j) {
+            int len = rules[j].size();
+            for (int k = 0; k < len; ++k) {
+                if(isInThisRule(rules[j][k], unfinishableVars[i])){
+                    rules[j].erase(rules[j].begin()+k);
+                    k--;
+                    len--;
+                    // break;
+                }
+            }
+        }
+    }
+    selfRuleDeleting(variables, rules);
+    deleteRepeatedRules(rules);
     // for checking countless loop on S
     // finishableVars.erase(finishableVars.begin());
     // int len = rules[0].size();
@@ -423,22 +504,18 @@ int main() {
     vector<char> variables = encoding(s);
     cout << "Enter grammar's rules. You should separate them with an enter:\n";
     vector<vector<string>> rules;
-    for (int i = 0; i < variables.size(); ++i) {
+    for (int i = 0; i < int(variables.size()); ++i) {
         getline(cin, s);
         rules.push_back(grammarEncoder(s));
     }
     deletingLanda(alphabet, variables, rules);
-    cout << "Grammar after deleting landa rules:\n";
-    printGrammar(variables, rules);
+    printGrammar(variables, rules, "landa rules");
     deletingChain(variables, rules);
-    cout << "Grammar after deleting chain rules:\n";
-    printGrammar(variables, rules);
+    printGrammar(variables, rules, "chain rules");
     deletingUnavailableVars(variables, rules);
-    cout << "Grammar after deleting unavailable variables:\n";
-    printGrammar(variables, rules);
-    deletingCountlessVariables(alphabet, variables, rules);
-    cout << "Grammar after deleting countless variables:\n";
-    printGrammar(variables, rules);
+    printGrammar(variables, rules, "unavailable variables");
+    deletingCountlessVariables1(alphabet, variables, rules);
+    printGrammar(variables, rules, "countless variables");
     return 0;
 }
 // 3
@@ -452,7 +529,7 @@ int main() {
 // a b c
 // S A B C
 // S -> ACA
-// A -> aAa | B | C
+// A -> aAa | B
 // B -> bB | b
 // C -> cC | @
 
