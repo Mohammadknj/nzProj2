@@ -447,7 +447,7 @@ void deletingCountlessVariables1(vector<char> alphabet, vector<char> &variables,
         if(!isInThisVector(finishableVars, variables[i])){
             // If S variable is countless, So it will just make landa and we have
             if(i == 0){
-                cout<<"This start variable ("<<variables[0]<<") just makes landa strings,"<<endl;
+                cout<<"This start variable ("<<variables[0]<<") just makes landa strings, We don't have any normalization."<<endl;
                 deleteAllVars(variables, rules);
                 return;
             }
@@ -489,6 +489,54 @@ void deletingCountlessVariables1(vector<char> alphabet, vector<char> &variables,
     // }
 }
 
+char newVar(vector<char> variables){
+    short charAscii = 65;
+    //bool found = true;
+    //while(found && charAscii<92){
+    for (int i = 0; i < int(variables.size()); ++i) {
+        if(variables[i] == charAscii){
+            charAscii++;
+            //found = false;
+            i=-1;
+        }
+    }
+    //}
+    return charAscii;
+}
+
+void chomsky(vector<char> alphabet, vector<char> variables,
+             vector<vector<string>> &rules){
+    if(rules.size() == 0)
+        return;
+    int rulesLen = rules.size();
+    // making alphabet vars like Ta -> a
+    vector<char> newVars;
+    vector<vector<string>> newRules;
+    for (int i = 0; i < int(alphabet.size()); ++i) {
+        newVars.push_back(newVar(variables));
+        variables.push_back(newVars[newVars.size()-1]);
+        vector<string> r;
+        string s(1, alphabet[i]);
+        r.push_back(s);
+        newRules.push_back(r);
+        rules.push_back(newRules[i]);
+    }
+    // for (int i = 0; i < rulesLen; ++i) {
+    for (int i = 0; i < int(rules.size()); ++i) {
+        for (int j = 0; j < int(rules[i].size()); ++j) {
+            if(rules[i][j].size() > 1){
+                if(rules[i][j].size() == 2){
+                    if(!isInTheseVariables(variables,rules[i][j][0]) && !isInTheseVariables(variables,rules[i][j][1])){
+                        cout<<"H";
+                    }
+                }else{
+                    int mid = rules[i][j].size()/2;
+                }
+            }
+        }
+    }
+}
+
 int main() {
     string s;
     cout << "HELLO! Welcome to our CNF convertor\n";
@@ -516,6 +564,8 @@ int main() {
     printGrammar(variables, rules, "unavailable variables");
     deletingCountlessVariables1(alphabet, variables, rules);
     printGrammar(variables, rules, "countless variables");
+
+    chomsky(alphabet, variables, rules);
     return 0;
 }
 // 3
